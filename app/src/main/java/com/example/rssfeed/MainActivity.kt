@@ -4,8 +4,8 @@ import android.content.Context
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.ArrayAdapter
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.ListView
 import java.net.URL
 import kotlin.properties.Delegates
@@ -33,29 +33,53 @@ class FeedEntry {
 
 
 class MainActivity : AppCompatActivity() {
-    private val Tag = "MainActivity" //Logging tag
-
-    private val downloadData by lazy { DownloadData(this, findViewById(R.id.xmlListView)) }
+    private var downloadData: DownloadData? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        Log.d(Tag, "onCreate Called")
-        downloadData.execute("http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topfreeapplications/limit=10/xml")
-        Log.d(Tag, "onCreate: done")
+        downloadUrl("http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topfreeapplications/limit=10/xml")
+    }
+
+    private fun downloadUrl(feedUrl: String){
+        downloadData = DownloadData(this, findViewById(R.id.xmlListView))
+        downloadData?.execute(feedUrl)
+    }
+
+    //Adds the menu to the app
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.feeds_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val feedUrl: String
+
+        when (item.itemId){
+            R.id.mnuFree ->
+                    feedUrl = "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topfreeapplications/limit=10/xml"
+            R.id.mnuPaid ->
+                feedUrl = "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/toppaidapplications/limit=10/xml"
+            R.id.mnuSongs ->
+                feedUrl = "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topsongs/limit=10/xml"
+            else ->
+                return super.onOptionsItemSelected(item)
+        }
+
+        downloadUrl(feedUrl)
+        return true
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        downloadData.cancel(true)
+        downloadData?.cancel(true)
     }
 
     //Define the object that uses the async call
     companion object {
         //This is for async calls
         private class DownloadData(context: Context, listView: ListView) : AsyncTask<String, Void, String>(){
-            private val Tag = "Download Data"
 
             var propContext : Context by Delegates.notNull()
             var propListView : ListView by Delegates.notNull()
@@ -67,7 +91,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPostExecute(result: String) {
                 super.onPostExecute(result)
-                Log.d(Tag, "onPostExecute: paramter is $result")
                 val parseApplications = ParseApplications()
                 parseApplications.parse(result)
 
@@ -78,14 +101,9 @@ class MainActivity : AppCompatActivity() {
 
             }
             override fun doInBackground(vararg url: String?): String {
-                Log.d(Tag, "doInBackground: Starts with ${url[0]}")
                 //Download the rss feed from the url passed to doInBackground
                 val rssFeed = downloadXML(url[0])
-                //If rssFeed is empty after download log an error
-                if (rssFeed.isEmpty()) {
-                    Log.e(Tag, "doInBackground: Error downloading")
-                }
-                //Return the XML
+
                 return rssFeed
             }
             //Reads the URL

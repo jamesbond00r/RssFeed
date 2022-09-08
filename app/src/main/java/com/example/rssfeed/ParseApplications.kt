@@ -1,15 +1,12 @@
 package com.example.rssfeed
 
-import android.util.Log
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
 class ParseApplications {
-    private val Tag = "ParseApp"
     val applications = ArrayList<FeedEntry>()
 
     fun parse(xmlData: String): Boolean {
-        Log.d(Tag, "Parse called with $xmlData")
         var status = true
         var inEntry = false
         var textValue = ""
@@ -26,7 +23,6 @@ class ParseApplications {
                 when (eventType) {
 
                     XmlPullParser.START_TAG -> {
-                        Log.d(Tag, "parse: Starting tag for " + tagName)
                         if (tagName == "entry"){
                             inEntry = true
                         }
@@ -34,7 +30,6 @@ class ParseApplications {
                     XmlPullParser.TEXT -> textValue = xpp.text
 
                     XmlPullParser.END_TAG -> {
-                        Log.d(Tag, "parse: Ending tag for " + tagName )
                         if (inEntry) {
                             when (tagName) {
                                 "entry" -> {
